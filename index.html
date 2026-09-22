@@ -2,7 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="Doodle Arena — a colorful, fast-paced 3D arena shooter. Gun in the right hand, sword in the left. Battle ground chasers and flying swoopers across 3 waves, then defeat the Doodle King boss. Free HTML5 game, mobile-friendly, no download.">
+<meta name="theme-color" content="#1a1240">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:title" content="Doodle Arena — 3D Shooter">
+<meta property="og:description" content="Colorful fast-paced 3D arena shooter: sword + gun, ground and flying enemies, final boss. Playable in browser on mobile and desktop.">
+<meta property="og:type" content="website">
 <title>Doodle Arena Shooter 3D</title>
 <script src="https://www.youtube.com/game_api/v1"></script>
 <script src="./three.min.js"></script>
@@ -48,19 +56,42 @@
   .btn.blue { background:#00d5ff; }
   #pause-screen, #over-screen, #win-screen { display:none; }
   #lock-hint { position:absolute; bottom:86px; left:50%; transform:translateX(-50%); background:#111; color:#fff; padding:6px 14px; border-radius:12px; font-size:13px; font-weight:800; display:none; }
+  /* Loading overlay (fast-load UX for reviewers / first paint) */
+  #loading { position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; gap:14px; align-items:center; justify-content:center; background:#1a1240; transition:opacity .35s; }
+  #loading.hide { opacity:0; pointer-events:none; }
+  #loading .doodle { font-size:54px; animation:bob 1s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0) rotate(-6deg);} 50%{transform:translateY(-12px) rotate(6deg);} }
+  #loading .bar { width:min(280px,70vw); height:16px; background:#fffdf5; border:3px solid #111; border-radius:10px; overflow:hidden; }
+  #loading .bar > div { height:100%; width:40%; background:linear-gradient(90deg,#ff2e7e,#ff9d00,#2eff7b,#00cfff); border-radius:6px; animation:slide 1s linear infinite; }
+  @keyframes slide { 0%{margin-left:-40%;} 100%{margin-left:100%;} }
+  #loading p { color:#fff; font-weight:900; }
   /* Mobile */
   #touch-ui { position:fixed; inset:0; z-index:6; pointer-events:none; display:none; }
   #touch-ui.on { display:block; }
-  #joy { position:absolute; left:18px; bottom:18px; width:124px; height:124px; background:rgba(255,255,255,.18); border:3px solid #fff; border-radius:50%; pointer-events:auto; }
-  #joy-knob { position:absolute; left:50%; top:50%; width:56px; height:56px; background:#fff; border:3px solid #111; border-radius:50%; transform:translate(-50%,-50%); }
-  .tbtn { position:absolute; pointer-events:auto; width:76px; height:76px; border-radius:50%; border:3px solid #111; font-weight:900; font-size:14px; font-family:inherit; box-shadow:3px 3px 0 #111; }
-  #btn-fire { right:18px; bottom:96px; background:#ff4d6d; color:#fff; }
-  #btn-sword { right:104px; bottom:22px; background:#00d5ff; }
-  #btn-jump { right:18px; bottom:18px; background:#c6ff00; width:64px; height:64px; }
-  @media (max-width:700px){ .controls-grid{grid-template-columns:1fr;} #lock-hint{display:none !important;} }
+  #joy { position:absolute; left:18px; bottom:calc(18px + env(safe-area-inset-bottom, 0px)); width:132px; height:132px; background:rgba(255,255,255,.18); border:3px solid #fff; border-radius:50%; pointer-events:auto; }
+  #joy-knob { position:absolute; left:50%; top:50%; width:58px; height:58px; background:#fff; border:3px solid #111; border-radius:50%; transform:translate(-50%,-50%); }
+  .tbtn { position:absolute; pointer-events:auto; width:80px; height:80px; border-radius:50%; border:3px solid #111; font-weight:900; font-size:14px; font-family:inherit; box-shadow:3px 3px 0 #111; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .tbtn:active { filter:brightness(1.15); }
+  #btn-fire { right:18px; bottom:calc(104px + env(safe-area-inset-bottom, 0px)); background:#ff4d6d; color:#fff; }
+  #btn-sword { right:110px; bottom:calc(24px + env(safe-area-inset-bottom, 0px)); background:#00d5ff; }
+  #btn-jump { right:18px; bottom:calc(18px + env(safe-area-inset-bottom, 0px)); background:#c6ff00; width:64px; height:64px; }
+  #btn-pause { right:12px; top:calc(64px + env(safe-area-inset-top, 0px)); width:52px; height:52px; font-size:20px; background:#fffdf5; }
+  #topbar { padding-top:env(safe-area-inset-top, 0px); }
+  @media (max-width:700px){
+    .controls-grid{grid-template-columns:1fr;}
+    #lock-hint{display:none !important;}
+    #topbar { flex-wrap:wrap; gap:6px; }
+    .pill { font-size:12px; padding:4px 10px; }
+    #health-wrap { max-width:none; flex:1 1 100%; order:-1; }
+    #bossbar-wrap { top:104px; }
+    .tbtn { width:88px; height:88px; }
+    #btn-jump { width:68px; height:68px; }
+    #wave-banner { top:26%; }
+  }
 </style>
 </head>
 <body>
+<div id="loading"><div class="doodle">🖍️💥</div><div class="bar"><div></div></div><p>Loading Doodle Arena…</p></div>
 <canvas id="game-canvas"></canvas>
 
 <div id="hud">
@@ -85,6 +116,7 @@
   <button class="tbtn" id="btn-fire">🔫<br>FIRE</button>
   <button class="tbtn" id="btn-sword">🗡️<br>SLASH</button>
   <button class="tbtn" id="btn-jump">⤒</button>
+  <button class="tbtn" id="btn-pause">⏸</button>
 </div>
 
 <div class="screen" id="menu-screen">
@@ -93,8 +125,8 @@
     <p>A colorful, fast-paced 3D shooter! Sword in <b>LEFT</b> hand, gun in <b>RIGHT</b> hand. Survive ground chasers + flying swoopers, then beat the <b>DOODLE KING</b> boss!</p>
     <div class="controls-grid">
       <div>🖱️ Mouse: look<br>⌨️ WASD: move<br>⚡ Shift: sprint</div>
-      <div>🔫 Left-click: SHOOT gun<br>🗡️ Right-click / F: SWORD slash<br>␣ Space: jump</div>
-      <div>📱 Mobile: left stick move, drag to look, FIRE + SLASH buttons</div>
+      <div>🔫 Hold left-click: full-auto gun<br>🗡️ Right-click / F: SWORD slash<br>␣ Space: jump</div>
+      <div>📱 Mobile: left stick move (push far = sprint), drag right side to aim, hold FIRE, tap SLASH, ⏸ pauses</div>
       <div>💚 Kills heal +5 HP<br>👑 Boss: dodge charge + shockwave rings!</div>
     </div>
     <p style="font-size:13px">Best score: <span id="best-num">0</span> • 🎵 music starts on first click (browser rule) — M to mute</p>
@@ -137,6 +169,15 @@
 <script>
 (function(){
 'use strict';
+// No-crash guard: report runtime errors to YouTube health API, never white-screen.
+window.addEventListener('error',function(ev){
+  try{ if(window.ytgame&&window.ytgame.health&&window.ytgame.health.logError) window.ytgame.health.logError({message:String((ev&&ev.message)||'unknown error')}); }catch(e){}
+});
+if(typeof THREE==='undefined'){
+  var l=document.getElementById('loading');
+  if(l) l.innerHTML='<p style="padding:20px;text-align:center">⚠️ Could not load the 3D engine.<br>Please check your connection and reload.</p>';
+  return;
+}
 // ============ AUDIO: retro-modern chiptune + synth SFX (procedural, no assets) ============
 var AudioSys = {
   ctx:null, master:null, musicBus:null, sfxBus:null, delaySend:null, muted:false,
@@ -388,7 +429,9 @@ var renderer, scene, camera;
 try{
   renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true});
 }catch(e){ document.body.innerHTML='<div style="color:#fff;padding:40px;font-family:sans-serif">WebGL not supported</div>'; return; }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+// coarse-pointer (phones/tablets) GPUs get a lower pixel cap for smooth framerates
+var COARSE = (window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)||('ontouchstart' in window);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,COARSE?1.5:2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -396,6 +439,15 @@ scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87e8ff);
 scene.fog = new THREE.Fog(0x87e8ff, 40, 110);
 camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 300);
+function applyViewport(){
+  var w=window.innerWidth,h=window.innerHeight;
+  camera.aspect=w/h;
+  // portrait phones need wider vertical FOV or the arena feels like a tunnel
+  camera.fov=camera.aspect<0.8?90:(camera.aspect<1?82:75);
+  camera.updateProjectionMatrix();
+  renderer.setSize(w,h);
+}
+applyViewport();
 
 var hemi = new THREE.HemisphereLight(0xffffff, 0x8855ff, 0.9); scene.add(hemi);
 var sun = new THREE.DirectionalLight(0xfffbe0, 0.9); sun.position.set(20,30,10); sun.castShadow=true;
@@ -746,51 +798,70 @@ canvas.addEventListener('click',function(){
   if(!isTouch && !locked){ try{canvas.requestPointerLock();}catch(e){} }
 });
 var mouseDownR=false;
-window.addEventListener('mousedown',function(e){ if(state!=='play')return; if(e.button===0) shoot(); if(e.button===2) swordSlash(); });
-window.addEventListener('mouseup',function(e){});
+var mouseFireHeld=false;
+window.addEventListener('mousedown',function(e){
+  if(state!=='play')return;
+  if(e.target&&e.target.closest&&(e.target.closest('.btn')||e.target.closest('.pill')||e.target.closest('.card')))return;
+  if(e.button===0){ mouseFireHeld=true; shoot(); }
+  if(e.button===2) swordSlash();
+});
+window.addEventListener('mouseup',function(e){ if(e.button===0) mouseFireHeld=false; });
+window.addEventListener('blur',function(){ mouseFireHeld=false; fireHeld=false; });
 window.addEventListener('contextmenu',function(e){ e.preventDefault(); });
 window.addEventListener('mousemove',function(e){
   if(state!=='play'||!locked) return;
   player.yaw-=e.movementX*0.0024; player.pitch-=e.movementY*0.0024;
   player.pitch=Math.max(-1.4,Math.min(1.4,player.pitch));
 });
-// touch
-var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-var joy={x:0,y:0,id:null}, lookId=null, lookLast=null;
-if(isTouch) document.getElementById('touch-ui').classList.add('on');
+// touch — joystick (left half), drag-look (right side), hold FIRE, tap SLASH/JUMP
+var isTouch=(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)||('ontouchstart' in window)||navigator.maxTouchPoints>0;
+var joy={x:0,y:0,id:null,mag:0}, lookId=null, lookLast=null, fireHeld=false;
+function showTouchUI(){ document.getElementById('touch-ui').classList.add('on'); }
+if(isTouch&&(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)) showTouchUI();
 var joyEl=document.getElementById('joy'), knob=document.getElementById('joy-knob');
 function joyPos(t){ var r=joyEl.getBoundingClientRect(); return {x:t.clientX-(r.left+r.width/2), y:t.clientY-(r.top+r.height/2)}; }
+function isUiTarget(t){ return t&&t.closest&&(t.closest('.tbtn')||t.closest('.pill')||t.closest('.btn')||t.closest('.card')||t.closest('#joy')); }
 window.addEventListener('touchstart',function(e){
-  AudioSys.init(); AudioSys.resume();
+  showTouchUI();
+  AudioSys.init(); AudioSys.resume(); AudioSys.unlock();
   for(var i=0;i<e.changedTouches.length;i++){
     var t=e.changedTouches[i];
-    if(t.clientX<window.innerWidth*0.4 && t.clientY>window.innerHeight*0.5 && joy.id===null){
-      joy.id=t.identifier; var p=joyPos(t); joy.x=p.x; joy.y=p.y;
-    } else if(lookId===null && !(t.target.classList&&t.target.classList.contains('tbtn'))){
+    var el=document.elementFromPoint(t.clientX,t.clientY);
+    if(isUiTarget(el||t.target)) continue; // buttons/pills handle themselves
+    if(t.clientX<window.innerWidth*0.5 && joy.id===null){
+      joy.id=t.identifier; var p=joyPos(t); joy.x=p.x; joy.y=p.y; joy.mag=Math.min(1,Math.hypot(p.x,p.y)/50);
+    } else if(lookId===null){
       lookId=t.identifier; lookLast={x:t.clientX,y:t.clientY};
     }
   }
+  if(state==='play') e.preventDefault();
 },{passive:false});
 window.addEventListener('touchmove',function(e){
   for(var i=0;i<e.changedTouches.length;i++){
     var t=e.changedTouches[i];
-    if(t.identifier===joy.id){ var p=joyPos(t); var m=Math.min(50,Math.hypot(p.x,p.y)); var a=Math.atan2(p.y,p.x); joy.x=Math.cos(a)*m; joy.y=Math.sin(a)*m; knob.style.transform='translate(calc(-50% + '+joy.x+'px),calc(-50% + '+joy.y+'px))'; }
-    if(t.identifier===lookId&&lookLast){ player.yaw-=(t.clientX-lookLast.x)*0.005; player.pitch-=(t.clientY-lookLast.y)*0.005; player.pitch=Math.max(-1.4,Math.min(1.4,player.pitch)); lookLast={x:t.clientX,y:t.clientY}; }
+    if(t.identifier===joy.id){ var p=joyPos(t); var m=Math.min(50,Math.hypot(p.x,p.y)); var a=Math.atan2(p.y,p.x); joy.x=Math.cos(a)*m; joy.y=Math.sin(a)*m; joy.mag=m/50; knob.style.transform='translate(calc(-50% + '+joy.x+'px),calc(-50% + '+joy.y+'px))'; }
+    if(t.identifier===lookId&&lookLast){ player.yaw-=(t.clientX-lookLast.x)*0.0055; player.pitch-=(t.clientY-lookLast.y)*0.0055; player.pitch=Math.max(-1.4,Math.min(1.4,player.pitch)); lookLast={x:t.clientX,y:t.clientY}; }
   }
   if(state==='play') e.preventDefault();
 },{passive:false});
-window.addEventListener('touchend',function(e){
+function endTouch(e){
+  AudioSys.unlock();
   for(var i=0;i<e.changedTouches.length;i++){
     var t=e.changedTouches[i];
-    if(t.identifier===joy.id){ joy.id=null; joy.x=joy.y=0; knob.style.transform='translate(-50%,-50%)'; }
+    if(t.identifier===joy.id){ joy.id=null; joy.x=joy.y=0; joy.mag=0; knob.style.transform='translate(-50%,-50%)'; }
     if(t.identifier===lookId){ lookId=null; }
   }
-});
-document.getElementById('btn-fire').addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();shoot();});
-document.getElementById('btn-sword').addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();swordSlash();});
-document.getElementById('btn-jump').addEventListener('touchstart',function(e){e.preventDefault();if(player.grounded){player.vy=6;player.grounded=false;}});
-// hold-to-fire on mobile
-setInterval(function(){ if(state==='play'&&isTouch){ /* auto-fire while touching fire btn */ } },100);
+}
+window.addEventListener('touchend',endTouch);
+window.addEventListener('touchcancel',endTouch);
+var fireBtn=document.getElementById('btn-fire');
+fireBtn.addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();showTouchUI();AudioSys.init();AudioSys.unlock();fireHeld=true;shoot();},{passive:false});
+fireBtn.addEventListener('touchend',function(e){e.preventDefault();fireHeld=false;},{passive:false});
+fireBtn.addEventListener('touchcancel',function(){fireHeld=false;});
+document.getElementById('btn-sword').addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();AudioSys.unlock();swordSlash();},{passive:false});
+document.getElementById('btn-jump').addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();AudioSys.unlock();if(player.grounded){player.vy=6;player.grounded=false;AudioSys.jump();}},{passive:false});
+document.getElementById('btn-pause').addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();if(state==='play'||state==='pause')togglePause();},{passive:false});
+document.getElementById('btn-pause').addEventListener('click',function(e){e.stopPropagation();if(state==='play'||state==='pause')togglePause();});
 
 // ============ FLOW ============
 function resetGame(){
@@ -801,6 +872,8 @@ function resetGame(){
   document.getElementById('bossbar-wrap').classList.remove('on');
   score=0;kills=0;wave=0;player.hp=player.maxHp;player.alive=true;
   player.pos.set(0,1.7,14);player.yaw=Math.PI;player.pitch=0;player.vy=0;
+  try{ fireHeld=false; mouseFireHeld=false; joy.id=null; joy.x=joy.y=0; joy.mag=0; lookId=null;
+    var kb=document.getElementById('joy-knob'); if(kb) kb.style.transform='translate(-50%,-50%)'; }catch(e){}
   updateHUD();
 }
 function playGame(){
@@ -844,7 +917,8 @@ document.getElementById('retry-btn').onclick=playGame;
 document.getElementById('win-retry-btn').onclick=playGame;
 document.getElementById('resume-btn').onclick=togglePause;
 document.getElementById('quit-btn').onclick=playGame;
-window.addEventListener('resize',function(){ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
+window.addEventListener('resize',function(){ applyViewport(); });
+window.addEventListener('orientationchange',function(){ setTimeout(applyViewport,200); });
 // load cloud best
 try{
   if(window.ytgame&&window.ytgame.game&&window.ytgame.game.loadData){
@@ -862,12 +936,29 @@ document.addEventListener('visibilitychange',function(){ if(document.hidden&&sta
 
 // ============ LOOP ============
 var clock=new THREE.Clock(), firstFrame=true;
+// auto quality: keep gameplay smooth on low-end reviewer devices
+var PIXCAP=(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)?1.5:2;
+var perfAcc=0, perfN=0, perfT=0;
+function autoQuality(dt){
+  perfAcc+=dt; perfN++; perfT+=dt;
+  if(perfT<3) return;
+  var fps=perfN/perfAcc;
+  try{
+    var pr=renderer.getPixelRatio();
+    if(fps<38&&pr>1){ renderer.setPixelRatio(Math.max(1,pr-0.25)); }
+    else if(fps>57&&pr<PIXCAP){ renderer.setPixelRatio(Math.min(PIXCAP,pr+0.25)); }
+  }catch(e){}
+  perfAcc=0; perfN=0; perfT=0;
+}
 function animate(){
   requestAnimationFrame(animate);
   var dt=Math.min(clock.getDelta(),0.05); time+=dt;
+  autoQuality(dt);
   if(state==='play'){
     // movement
-    var sp=player.speed*((keys['ShiftLeft']||keys['ShiftRight'])?1.45:1);
+    var sprintHeld=!!(keys['ShiftLeft']||keys['ShiftRight']);
+    if(joy.mag>0.85) sprintHeld=true; // push stick to edge = sprint on mobile
+    var sp=player.speed*(sprintHeld?1.45:1);
     var f=0,s=0;
     if(keys['KeyW']||keys['ArrowUp'])f+=1; if(keys['KeyS']||keys['ArrowDown'])f-=1;
     if(keys['KeyA']||keys['ArrowLeft'])s-=1; if(keys['KeyD']||keys['ArrowRight'])s+=1;
@@ -893,13 +984,13 @@ function animate(){
     camera.rotation.set(0,0,0); camera.rotation.order='YXZ'; camera.rotation.y=player.yaw; camera.rotation.x=player.pitch;
     // weapon anim
     player.shootCD-=dt; player.slashCD-=dt;
+    if((fireHeld||mouseFireHeld)&&state==='play') shoot(); // hold FIRE / mouse = full-auto
     gunG.position.z+= ( -0.6 - gunG.position.z)*Math.min(1,dt*12);
     muzzleFlash.material.opacity*=0.8;
     if(slashArc.material.opacity>0){ slashArc.material.opacity-=dt*4; swordG.rotation.x-=dt*10; }
     else { swordG.rotation.x+=(0.2-swordG.rotation.x)*dt*8; swordG.position.y=-0.3+Math.sin(time*3)*0.01; }
     gunG.position.y=-0.28+Math.sin(time*8)*0.008;
-    // auto-hold fire for desktop mouse held
-    // spawning
+    // spawning (hold-to-fire handled above via fireHeld/mouseFireHeld)
     spawnTimer-=dt;
     if(waveQueue.length&&spawnTimer<=0){ spawnNext(); spawnTimer=0.5; }
     // enemies
@@ -977,7 +1068,7 @@ function animate(){
     enemies.forEach(function(e){ if(e.body) e.body.rotation.y+=dt; });
   }
   renderer.render(scene,camera);
-  if(firstFrame){ firstFrame=false; try{ if(window.ytgame&&window.ytgame.game) window.ytgame.game.firstFrameReady(); }catch(e){} }
+  if(firstFrame){ firstFrame=false; try{ if(window.ytgame&&window.ytgame.game) window.ytgame.game.firstFrameReady(); }catch(e){} try{ var l=document.getElementById('loading'); if(l) l.classList.add('hide'); }catch(e){} }
 }
 updateHUD();
 animate();
